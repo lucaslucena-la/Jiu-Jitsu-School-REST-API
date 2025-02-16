@@ -22,59 +22,59 @@ Esta é uma aplicação REST API desenvolvida com **Python** e **Django REST Fra
 
 ### 🔹 1. Criar e Ativar o Ambiente Virtual
 #### Linux:
-bash
+```bash
 python3 -m venv venv
 source venv/bin/activate
-
+```
 #### Windows:
-bash
+```bash
 python -m venv venv
 venv\Scripts\Activate
-
+```
 
 Caso haja erro de permissão, execute:
-powershell
+```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-
+```
 
 ### 🔹 2. Instalar Dependências
-bash
+```bash
 pip install django pillow django-ninja
-
+```
 
 ### 🔹 3. Criar o Projeto Django
-bash
+```bash
 django-admin startproject core .
 python manage.py runserver
-
+```
 
 ### 🔹 4. Criar o App
-bash
+```bash
 python manage.py startapp treino
-
+```
 
 ### 🔹 5. Configurar as URLs da API
 No arquivo **urls.py**, adicione:
-python
+```python
 from .api import api
 path('api/', api.urls)
-
+```
 
 No arquivo **core/api.py**, registre o roteador:
-python
+```python
 from ninja import NinjaAPI
 from treino.api import treino_router
 
 api = NinjaAPI()
 api.add_router('', treino_router)
-
+```
 
 ---
 
 ## 📌 Modelos e Endpoints
 
 ### 📍 Modelo de Alunos
-python
+```python
 class Alunos(models.Model):
     faixa_choices = (
         ('B', 'Branca'),
@@ -87,10 +87,10 @@ class Alunos(models.Model):
     email = models.EmailField(unique=True)
     faixa = models.CharField(max_length=1, choices=faixa_choices, default='B')
     data_nascimento = models.DateField(null=True, blank=True)
-
+```
 
 ### 📍 Schema de Alunos
-python
+```python
 from ninja import ModelSchema
 from .models import Alunos
 
@@ -98,10 +98,10 @@ class AlunosSchema(ModelSchema):
     class Meta:
         model = Alunos
         fields = ['nome', 'email', 'faixa', 'data_nascimento']
-
+```
 
 ### 📍 Criar um Aluno
-python
+```python
 @treino_router.post('/', response={200: AlunosSchema})
 def criar_aluno(request, aluno_schema: AlunosSchema):
     if Alunos.objects.filter(email=aluno_schema.email).exists():
@@ -109,34 +109,34 @@ def criar_aluno(request, aluno_schema: AlunosSchema):
     aluno = Alunos(**aluno_schema.dict())
     aluno.save()
     return aluno
-
+```
 
 ### 📍 Listar Alunos
-python
+```python
 @treino_router.get('/alunos/', response=List[AlunosSchema])
 def listar_alunos(request):
     return Alunos.objects.all()
-
+```
 
 ### 📍 Modelo de Aulas Concluídas
-python
+```python
 class AulasConcluidas(models.Model):
     aluno = models.ForeignKey(Alunos, on_delete=models.CASCADE)
     data = models.DateField(auto_now_add=True)
     faixa_atual = models.CharField(max_length=1, choices=faixa_choices)
-
+```
 
 ### 📍 Cálculo de Progressão de Faixa
-python
+```python
 def calculate_lessons_to_upgrade(n):
     import math
     d = 1.47
     k = 30 / math.log(d)
     return round(k * math.log(n + d))
-
+```
 
 ### 📍 Ver Progresso do Aluno
-python
+```python
 @treino_router.get('/progresso_aluno/', response={200: ProgressoAlunoSchema})
 def progresso_aluno(request, email_aluno: str):
     aluno = Alunos.objects.get(email=email_aluno)
@@ -145,10 +145,10 @@ def progresso_aluno(request, email_aluno: str):
     n = order_belt.get(faixa_atual, 0)
     total_aulas_proxima_faixa = calculate_lessons_to_upgrade(n)
     return {"nome": aluno.nome, "email": aluno.email, "faixa": faixa_atual, "total_aulas": total_aulas_concluidas, "aulas_necessarias_para_proxima_faixa": total_aulas_proxima_faixa}
-
+```
 
 ### 📍 Atualizar Dados do Aluno
-python
+```python
 @treino_router.put("/alunos/{aluno_id}", response=AlunosSchema)
 def update_aluno(request, aluno_id: int, aluno_data: AlunosSchema):
     aluno = get_object_or_404(Alunos, id=aluno_id)
@@ -157,7 +157,7 @@ def update_aluno(request, aluno_id: int, aluno_data: AlunosSchema):
             setattr(aluno, attr, value)
     aluno.save()
     return aluno
-
+```
 
 ---
 
@@ -170,6 +170,8 @@ def update_aluno(request, aluno_id: int, aluno_data: AlunosSchema):
 
 ---
 
+## 📄 Licença
+Este projeto está sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 💡 **Desenvolvido com Django Ninja para facilitar a criação de APIs escaláveis!** 🚀
 
